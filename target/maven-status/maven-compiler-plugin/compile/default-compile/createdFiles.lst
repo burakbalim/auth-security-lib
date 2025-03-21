@@ -1,0 +1,8 @@
+com/thales/security/config/JwtSecurityAutoConfiguration.class
+com/thales/security/config/JwtSecurityProperties.class
+com/thales/security/model/JwtUserClaims.class
+com/thales/security/service/JwksService.class
+com/thales/security/context/JwtSecurityContext.class
+com/thales/security/filter/JwtAuthenticationFilter.class
+com/thales/security/model/JwtUserClaims$JwtUserClaimsBuilder.class
+com/thales/security/service/JwtTokenService.class
