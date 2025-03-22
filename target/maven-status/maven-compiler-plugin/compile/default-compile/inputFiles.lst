@@ -1,7 +1,0 @@
-/Users/burakbalim/codes/bbalim-github/microservice/auth-security-lib/src/main/java/com/thales/security/service/JwksService.java
-/Users/burakbalim/codes/bbalim-github/microservice/auth-security-lib/src/main/java/com/thales/security/model/JwtUserClaims.java
-/Users/burakbalim/codes/bbalim-github/microservice/auth-security-lib/src/main/java/com/thales/security/filter/JwtAuthenticationFilter.java
-/Users/burakbalim/codes/bbalim-github/microservice/auth-security-lib/src/main/java/com/thales/security/config/JwtSecurityAutoConfiguration.java
-/Users/burakbalim/codes/bbalim-github/microservice/auth-security-lib/src/main/java/com/thales/security/context/JwtSecurityContext.java
-/Users/burakbalim/codes/bbalim-github/microservice/auth-security-lib/src/main/java/com/thales/security/config/JwtSecurityProperties.java
-/Users/burakbalim/codes/bbalim-github/microservice/auth-security-lib/src/main/java/com/thales/security/service/JwtTokenService.java
