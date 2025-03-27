@@ -23,7 +23,6 @@ import java.util.concurrent.ConcurrentHashMap;
  * Service class for JWKS (JSON Web Key Set) operations.
  * This class retrieves public keys from JWKS endpoint for JWT validation.
  */
-@Service
 @Slf4j
 public class JwksService {
 

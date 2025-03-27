@@ -12,6 +12,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.annotation.EnableScheduling;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -26,6 +27,7 @@ import org.springframework.util.StringUtils;
  */
 @Configuration
 @EnableWebSecurity
+@EnableMethodSecurity
 @EnableScheduling
 @RequiredArgsConstructor
 @ComponentScan("com.thales.security")
@@ -34,7 +36,6 @@ import org.springframework.util.StringUtils;
 @Slf4j
 public class JwtSecurityAutoConfiguration {
 
-    private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final JwtSecurityProperties securityProperties;
 
     @PostConstruct
@@ -47,12 +48,17 @@ public class JwtSecurityAutoConfiguration {
     }
 
     @Bean
+    public JwtAuthenticationFilter jwtAuthenticationFilter() {
+        return new JwtAuthenticationFilter(new JwtTokenService(new JwksService(securityProperties)));
+    }
+
+    @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
             .csrf(AbstractHttpConfigurer::disable)
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
-        
+            .addFilterBefore(jwtAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class);
+
         return http.build();
     }
 
@@ -60,9 +66,9 @@ public class JwtSecurityAutoConfiguration {
     public JwtTokenService jwtTokenService(JwksService jwksService) {
         return new JwtTokenService(jwksService);
     }
-    
+
     @Bean
     public JwksService jwksService() {
         return new JwksService(securityProperties);
     }
-} 
+}

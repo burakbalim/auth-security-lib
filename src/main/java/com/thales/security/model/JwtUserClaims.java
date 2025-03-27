@@ -16,12 +16,13 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 public class JwtUserClaims {
-    
-    private String userId;
+
+    private Long userId;
+    private String subject;
     private String username;
     private String email;
     private List<String> roles;
     private Long expirationTime;
-    
+
     // More fields can be added as needed
-} 
+}

@@ -22,7 +22,6 @@ import java.nio.charset.StandardCharsets;
  * Service class for JWT token operations.
  * This class performs JWT token validation and extraction of information from tokens.
  */
-@Service
 @Slf4j
 @RequiredArgsConstructor
 public class JwtTokenService {
@@ -43,22 +42,22 @@ public class JwtTokenService {
                 log.error("No kid (Key ID) found in JWT token");
                 return null;
             }
-            
+
             // Get the public key for the kid from the JWKS service
             PublicKey publicKey = jwksService.getPublicKey(kid);
             if (publicKey == null) {
                 log.error("No public key found for kid: {}", kid);
                 return null;
             }
-            
+
             // Validate the token with the public key
             Jws<Claims> claimsJws = Jwts.parserBuilder()
                     .setSigningKey(publicKey)
                     .build()
                     .parseClaimsJws(token);
-            
+
             Claims claims = claimsJws.getBody();
-            
+
             return mapClaimsToUser(claims);
         } catch (ExpiredJwtException e) {
             log.warn("JWT token has expired: {}", e.getMessage());
@@ -80,11 +79,11 @@ public class JwtTokenService {
         try {
             // Get header part from JWT token
             String header = token.split("\\.")[0];
-            
+
             // Decode from Base64
             byte[] decodedHeader = Base64.getDecoder().decode(header);
             String headerJson = new String(decodedHeader, StandardCharsets.UTF_8);
-            
+
             // Parse JSON and extract kid
             JsonNode jsonNode = jwksService.getObjectMapper().readTree(headerJson);
             return jsonNode.get("kid").asText();
@@ -102,13 +101,14 @@ public class JwtTokenService {
      */
     @SuppressWarnings("unchecked")
     private JwtUserClaims mapClaimsToUser(Claims claims) {
-        List<String> roles = claims.get("roles", List.class);
+        List<String> roles = claims.get("authorities", List.class);
         if (roles == null) {
             roles = new ArrayList<>();
         }
-        
+
         return JwtUserClaims.builder()
-                .userId(claims.getSubject())
+                .subject(claims.getSubject())
+                .userId(claims.get("id", Long.class))
                 .username(claims.get("username", String.class))
                 .email(claims.get("email", String.class))
                 .roles(roles)
@@ -128,4 +128,4 @@ public class JwtTokenService {
         }
         return null;
     }
-} 
+}

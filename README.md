@@ -1,112 +1,88 @@
-# Auth Security Library
+# JWT Güvenlik Kütüphanesi
 
-A library that provides JWT token validation and placing user information in a thread-safe context.
+Bu kütüphane, JWT token temelli Spring Security uygulamaları için temel güvenlik yapılandırmasını sağlar.
 
-## Features
+## Özellikler
 
-- JWT token validation (with RSA public key)
-- Automatic public key management from JWKS endpoint
-- Extraction of user information from JWT token
-- Storing user information in a thread-safe context
-- Auto-configuration for Spring Boot applications
+- JWT token doğrulama
+- JWKS URL yapılandırması
+- Metot tabanlı güvenlik (@PreAuthorize, @PostAuthorize)
+- Kullanıcı rol ve yetkilerine göre erişim kontrolü
 
-## Installation
+## Kurulum
 
-Add the following dependency to your Maven project's `pom.xml` file:
+Maven'a bağımlılık ekleyin:
 
 ```xml
 <dependency>
     <groupId>com.thales</groupId>
     <artifactId>auth-security-lib</artifactId>
-    <version>0.0.1-SNAPSHOT</version>
+    <version>1.0.0</version>
 </dependency>
 ```
 
-## Configuration
+## Yapılandırma
 
-You must add the following settings to your application's `application.yml` or `application.properties` file:
-
-```yaml
-jwt:
-  security:
-    enabled: true  # Default is true
-    jwks-url: "https://your-jwks-endpoint-url/jwks"  # REQUIRED: JWKS endpoint URL
-```
-
-**Note:** The `jwks-url` property is mandatory. The application won't work properly without it.
-
-### Example Configuration for Word-Flashy Service
+`application.properties` veya `application.yml` dosyasında JWKS URL'yi ayarlayın:
 
 ```properties
-# JWT security settings
 jwt.security.enabled=true
-jwt.security.jwks-url=https://apigw.staging.wordflashy.com/gw/oauth2/jwks
+jwt.security.jwks-url=https://your-auth-server/.well-known/jwks.json
 ```
 
-## Usage
+## @PreAuthorize Kullanımı
 
-### Using JwtSecurityContext
+Spring Security @PreAuthorize annotation'ları, metot seviyesinde erişim kontrolü sağlar. Bu kütüphane, @PreAuthorize ve diğer metot seviyesi güvenlik annotation'larının çalışması için gerekli yapılandırmayı otomatik olarak yapar.
 
-You can access user information from the JWT token from any Spring component:
+### Örnek Kullanım
 
 ```java
-import com.thales.security.context.JwtSecurityContext;
-import com.thales.security.model.JwtUserClaims;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RestController;
 
-@Service
-public class YourService {
+@RestController
+public class SecuredController {
 
-    public void someMethod() {
-        // Access current user information
-        JwtUserClaims currentUser = JwtSecurityContext.getCurrentUser();
-        
-        if (currentUser != null) {
-            String userId = currentUser.getUserId();
-            String username = currentUser.getUsername();
-            List<String> roles = currentUser.getRoles();
-            
-            // Implement your business logic here
-        }
+    @GetMapping("/admin")
+    @PreAuthorize("hasRole('ADMIN')")
+    public String adminEndpoint() {
+        return "Bu endpoint sadece ADMIN rolüne sahip kullanıcılar için erişilebilir";
+    }
+
+    @GetMapping("/user")
+    @PreAuthorize("hasRole('USER')")
+    public String userEndpoint() {
+        return "Bu endpoint sadece USER rolüne sahip kullanıcılar için erişilebilir";
+    }
+    
+    @GetMapping("/user-or-admin")
+    @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
+    public String userOrAdminEndpoint() {
+        return "Bu endpoint USER veya ADMIN rolüne sahip kullanıcılar için erişilebilir";
     }
 }
 ```
 
-### About JWKS (JSON Web Key Set)
+### Desteklenen SpEL Fonksiyonları
 
-The library uses public keys from the JWKS endpoint to validate JWT tokens. These public keys are managed automatically:
+Spring Expression Language (SpEL) aşağıdaki fonksiyonları destekler:
 
-- Keys are retrieved from the JWKS endpoint at application startup
-- Keys are automatically refreshed at intervals (every 12 hours)
-- If no public key is found for a key ID (kid), the keys are refreshed immediately
+- `hasRole('ROLE_NAME')`: Kullanıcının belirli bir role sahip olup olmadığını kontrol eder
+- `hasAnyRole('ROLE1', 'ROLE2')`: Kullanıcının belirtilen rollerden herhangi birine sahip olup olmadığını kontrol eder
+- `hasAuthority('AUTHORITY_NAME')`: Kullanıcının belirli bir yetkiye sahip olup olmadığını kontrol eder
+- `hasAnyAuthority('AUTH1', 'AUTH2')`: Kullanıcının belirtilen yetkilerden herhangi birine sahip olup olmadığını kontrol eder
+- `isAuthenticated()`: Kullanıcının kimliğinin doğrulanıp doğrulanmadığını kontrol eder
+- `isAnonymous()`: Kullanıcının anonim olup olmadığını kontrol eder
+- `authentication.principal`: Kimliği doğrulanmış kullanıcı adı veya diğer ana bilgiler
 
-### Customization
+### Tavsiye Edilen Uygulamalar
 
-If you want to change the default behavior, you can define your own `SecurityFilterChain` bean:
+1. Hassas işlemler için her zaman metot seviyesinde güvenlik kontrolü ekleyin
+2. `@PreAuthorize` yerine `@Secured` kullanan eski kodları güncelleyin
+3. SpEL fonksiyonlarını kullanarak daha karmaşık yetkilendirme kuralları oluşturun
+4. Her zaman erişim reddedildiğinde uygun istisna işleme mekanizmalarını uygulayın
 
-```java
-@Configuration
-public class YourSecurityConfig {
+## Daha Fazla Bilgi
 
-    @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        http
-            .csrf(AbstractHttpConfigurer::disable)
-            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/public/**").permitAll()
-                .anyRequest().authenticated()
-            )
-            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
-        
-        return http.build();
-    }
-}
-```
-
-## Version History
-
-- 0.0.1-SNAPSHOT: Initial version
-
-## License
-
-This project is licensed under the [MIT License](LICENSE). 
+Daha fazla bilgi için lütfen resmi Spring Security dokümantasyonuna bakın: [Spring Security Method Security](https://docs.spring.io/spring-security/site/docs/current/reference/html5/#method-security) 
