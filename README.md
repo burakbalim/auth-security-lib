@@ -1,17 +1,17 @@
-# JWT Güvenlik Kütüphanesi
+# JWT Security Library
 
-Bu kütüphane, JWT token temelli Spring Security uygulamaları için temel güvenlik yapılandırmasını sağlar.
+This library provides basic security configuration for JWT token-based Spring Security applications.
 
-## Özellikler
+## Features
 
-- JWT token doğrulama
-- JWKS URL yapılandırması
-- Metot tabanlı güvenlik (@PreAuthorize, @PostAuthorize)
-- Kullanıcı rol ve yetkilerine göre erişim kontrolü
+- JWT token validation
+- JWKS URL configuration
+- Method-based security (@PreAuthorize, @PostAuthorize)
+- Access control based on user roles and authorities
 
-## Kurulum
+## Installation
 
-Maven'a bağımlılık ekleyin:
+Add the dependency to Maven:
 
 ```xml
 <dependency>
@@ -21,20 +21,20 @@ Maven'a bağımlılık ekleyin:
 </dependency>
 ```
 
-## Yapılandırma
+## Configuration
 
-`application.properties` veya `application.yml` dosyasında JWKS URL'yi ayarlayın:
+Set the JWKS URL in your `application.properties` or `application.yml` file:
 
 ```properties
 jwt.security.enabled=true
 jwt.security.jwks-url=https://your-auth-server/.well-known/jwks.json
 ```
 
-## @PreAuthorize Kullanımı
+## Using @PreAuthorize
 
-Spring Security @PreAuthorize annotation'ları, metot seviyesinde erişim kontrolü sağlar. Bu kütüphane, @PreAuthorize ve diğer metot seviyesi güvenlik annotation'larının çalışması için gerekli yapılandırmayı otomatik olarak yapar.
+Spring Security @PreAuthorize annotations provide method-level access control. This library automatically makes the necessary configuration for @PreAuthorize and other method-level security annotations to work.
 
-### Örnek Kullanım
+### Example Usage
 
 ```java
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -47,42 +47,42 @@ public class SecuredController {
     @GetMapping("/admin")
     @PreAuthorize("hasRole('ADMIN')")
     public String adminEndpoint() {
-        return "Bu endpoint sadece ADMIN rolüne sahip kullanıcılar için erişilebilir";
+        return "This endpoint is accessible only for users with ADMIN role";
     }
 
     @GetMapping("/user")
     @PreAuthorize("hasRole('USER')")
     public String userEndpoint() {
-        return "Bu endpoint sadece USER rolüne sahip kullanıcılar için erişilebilir";
+        return "This endpoint is accessible only for users with USER role";
     }
     
     @GetMapping("/user-or-admin")
     @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
     public String userOrAdminEndpoint() {
-        return "Bu endpoint USER veya ADMIN rolüne sahip kullanıcılar için erişilebilir";
+        return "This endpoint is accessible for users with either USER or ADMIN role";
     }
 }
 ```
 
-### Desteklenen SpEL Fonksiyonları
+### Supported SpEL Functions
 
-Spring Expression Language (SpEL) aşağıdaki fonksiyonları destekler:
+Spring Expression Language (SpEL) supports the following functions:
 
-- `hasRole('ROLE_NAME')`: Kullanıcının belirli bir role sahip olup olmadığını kontrol eder
-- `hasAnyRole('ROLE1', 'ROLE2')`: Kullanıcının belirtilen rollerden herhangi birine sahip olup olmadığını kontrol eder
-- `hasAuthority('AUTHORITY_NAME')`: Kullanıcının belirli bir yetkiye sahip olup olmadığını kontrol eder
-- `hasAnyAuthority('AUTH1', 'AUTH2')`: Kullanıcının belirtilen yetkilerden herhangi birine sahip olup olmadığını kontrol eder
-- `isAuthenticated()`: Kullanıcının kimliğinin doğrulanıp doğrulanmadığını kontrol eder
-- `isAnonymous()`: Kullanıcının anonim olup olmadığını kontrol eder
-- `authentication.principal`: Kimliği doğrulanmış kullanıcı adı veya diğer ana bilgiler
+- `hasRole('ROLE_NAME')`: Checks if the user has a specific role
+- `hasAnyRole('ROLE1', 'ROLE2')`: Checks if the user has any of the specified roles
+- `hasAuthority('AUTHORITY_NAME')`: Checks if the user has a specific authority
+- `hasAnyAuthority('AUTH1', 'AUTH2')`: Checks if the user has any of the specified authorities
+- `isAuthenticated()`: Checks if the user is authenticated
+- `isAnonymous()`: Checks if the user is anonymous
+- `authentication.principal`: The authenticated username or other principal information
 
-### Tavsiye Edilen Uygulamalar
+### Recommended Practices
 
-1. Hassas işlemler için her zaman metot seviyesinde güvenlik kontrolü ekleyin
-2. `@PreAuthorize` yerine `@Secured` kullanan eski kodları güncelleyin
-3. SpEL fonksiyonlarını kullanarak daha karmaşık yetkilendirme kuralları oluşturun
-4. Her zaman erişim reddedildiğinde uygun istisna işleme mekanizmalarını uygulayın
+1. Always add method-level security checks for sensitive operations
+2. Update legacy code that uses `@Secured` to use `@PreAuthorize` instead
+3. Use SpEL functions to create more complex authorization rules
+4. Always implement appropriate exception handling mechanisms when access is denied
 
-## Daha Fazla Bilgi
+## More Information
 
-Daha fazla bilgi için lütfen resmi Spring Security dokümantasyonuna bakın: [Spring Security Method Security](https://docs.spring.io/spring-security/site/docs/current/reference/html5/#method-security) 
+For more information, please refer to the official Spring Security documentation: [Spring Security Method Security](https://docs.spring.io/spring-security/site/docs/current/reference/html5/#method-security) 
