@@ -37,7 +37,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private static final String UNAUTHORIZED_ERROR_MESSAGE = "Invalid or expired JWT token";
     private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ISO_DATE_TIME;
     private static final String OPTIONS_METHOD = "OPTIONS";
-    
+    private static final String PUBLIC_ENDPOINT = "public";
+
     private final JwtTokenService jwtTokenService;
 
     @Override
@@ -66,7 +67,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
      * @return true if authentication should be skipped
      */
     private boolean shouldSkipAuthentication(HttpServletRequest request) {
-        return isPreflightRequest(request);
+        return isPreflightRequest(request) || isPublicEndpoint(request);
     }
 
     /**
@@ -79,7 +80,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
      */
     private boolean authenticateRequest(HttpServletRequest request, HttpServletResponse response) throws IOException {
         String authorizationHeader = request.getHeader(AUTHORIZATION_HEADER);
-        
+
         if (isHeaderEmpty(authorizationHeader)) {
             return true; // No auth header, not our concern
         }
@@ -106,7 +107,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
      * @return true if successfully authenticated, false otherwise
      * @throws IOException if writing to the response fails
      */
-    private boolean processAuthHeader(String authorizationHeader, HttpServletRequest request, HttpServletResponse response) 
+    private boolean processAuthHeader(String authorizationHeader, HttpServletRequest request, HttpServletResponse response)
             throws IOException {
         try {
             boolean authenticated = processJwtAuthentication(authorizationHeader, request);
@@ -130,7 +131,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
      * @throws ServletException if a servlet exception occurs
      * @throws IOException if an I/O error occurs
      */
-    private void proceedWithFilterChain(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) 
+    private void proceedWithFilterChain(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
         filterChain.doFilter(request, response);
     }
@@ -149,7 +150,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     /**
      * Checks if the request is a CORS preflight request
-     * 
+     *
      * @param request HTTP request
      * @return True if it's a preflight request
      */
@@ -159,7 +160,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     /**
      * Processes JWT token and sets authentication information if valid
-     * 
+     *
      * @param authorizationHeader Authorization header
      * @param request HTTP request
      * @return True if authentication succeeded, false otherwise
@@ -170,20 +171,20 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             log.debug("No token found in authorization header");
             return false;
         }
-        
+
         JwtUserClaims userClaims = jwtTokenService.validateAndExtractClaims(token);
         if (userClaims == null) {
             log.debug("Invalid token or failed to extract claims");
             return false;
         }
-        
+
         setupSecurityContexts(userClaims, request);
         return true;
     }
 
     /**
      * Sets up user information in security contexts
-     * 
+     *
      * @param userClaims User claims information
      * @param request HTTP request
      */
@@ -198,26 +199,26 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     /**
      * Sets up Spring Security context with user information
-     * 
+     *
      * @param userClaims User claims information
      * @param request HTTP request
      */
     private void setupSpringSecurityContext(JwtUserClaims userClaims, HttpServletRequest request) {
         Collection<SimpleGrantedAuthority> authorities = extractAuthorities(userClaims);
-        
+
         UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
                 userClaims.getUsername(), null, authorities);
-        
+
         // Add request details to authentication
         authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-        
+
         SecurityContextHolder.getContext().setAuthentication(authentication);
         log.debug("Spring Security Authentication object created and set in SecurityContextHolder");
     }
 
     /**
      * Extracts authorities from user roles
-     * 
+     *
      * @param userClaims User claims information
      * @return Collection of authorities
      */
@@ -226,7 +227,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         if (roles == null || roles.isEmpty()) {
             return Collections.emptyList();
         }
-        
+
         return roles.stream()
                 .map(SimpleGrantedAuthority::new)
                 .collect(Collectors.toList());
@@ -241,7 +242,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private void sendUnauthorizedResponse(HttpServletResponse response) throws IOException {
         response.setStatus(HttpStatus.UNAUTHORIZED.value());
         response.setContentType("application/json");
-        
+
         String timestamp = LocalDateTime.now().format(DATE_TIME_FORMATTER);
         String errorJson = String.format(
                 "{\"status\":%d,\"message\":\"%s\",\"timestamp\":\"%s\"}",
@@ -249,7 +250,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 UNAUTHORIZED_ERROR_MESSAGE,
                 timestamp
         );
-        
+
         response.getWriter().write(errorJson);
     }
 
@@ -259,5 +260,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private void clearSecurityContexts() {
         JwtSecurityContext.clear();
         SecurityContextHolder.clearContext();
+    }
+
+    private boolean isPublicEndpoint(HttpServletRequest request) {
+        String path = request.getRequestURI();
+        return path.contains("/public") || path.contains("/api/v1/users");
     }
 }
