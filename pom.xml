@@ -5,7 +5,7 @@
 
     <groupId>com.thales</groupId>
     <artifactId>auth</artifactId>
-    <version>1.0.1</version>
+    <version>1.0.2</version>
     <name>auth-security-lib</name>
     <description>JWT Authentication and Security Library</description>
 
